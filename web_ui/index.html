@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🪑 Smart Seat Allocation</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app" class="app">
+        <!-- 헤더 -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>Seat Allocation</h1>
+                    <span class="subtitle">ALOC</span>
+                </div>
+                <div class="header-actions">
+                    <button id="shuffleBtn" class="btn btn-primary">
+                        <span class="btn-icon">🎲</span>
+                        자리 섞기
+                    </button>
+                    <button id="saveImageBtn" class="btn btn-secondary">
+                        <span class="btn-icon">📷</span>
+                        PNG 저장
+                    </button>
+                    <button id="settingsBtn" class="btn btn-outline">
+                        <span class="btn-icon">⚙️</span>
+                        설정
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 메인 컨텐츠 -->
+        <main class="main">
+            <!-- 사이드 패널 -->
+            <aside class="sidebar">
+                <div class="panel stats-panel">
+                    <h3 class="panel-title">📊 배치 정보</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-value" id="totalMembers">0</span>
+                            <span class="stat-label">총 인원</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="totalTeams">0</span>
+                            <span class="stat-label">모둠 수</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="groupConstraints">0</span>
+                            <span class="stat-label">그룹 제약</span>
+                        </div>
+                        <div class="stat-item conflict-stat">
+                            <span class="stat-value" id="conflictCount">0</span>
+                            <span class="stat-label">그룹 겹침</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel groups-panel">
+                    <h3 class="panel-title">🏷️ 그룹 현황</h3>
+                    <p class="panel-subtitle">같은 그룹의 멤버들끼리는 최대한 서로 다른 모둠에 배치됩니다</p>
+                    <div id="groupsInfo" class="groups-list">
+                        <!-- 그룹 정보 동적 생성 -->
+                    </div>
+                </div>
+
+            </aside>
+
+            <!-- 강의실 -->
+            <section class="classroom-section">
+                <div class="classroom-header">
+                    <div class="blackboard">
+                        <div class="blackboard-content">
+                            <span class="blackboard-text">🧑‍🏫 칠판</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="classroomContainer" class="classroom-container">
+                    <!-- 모둠들이 여기에 동적으로 생성됩니다 -->
+                </div>
+
+                <div class="classroom-footer">
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color occupied"></div>
+                            <span>배치된 자리</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color empty"></div>
+                            <span>빈 자리</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color conflict"></div>
+                            <span>그룹 겹침</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 배치 로그 -->
+                    <div class="allocation-log">
+                        <h4 class="log-title">📋 배치 기록</h4>
+                        <div id="logContainer" class="log-container">
+                            <p class="log-empty">아직 배치 기록이 없습니다.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 설정 모달 -->
+        <div id="settingsModal" class="modal">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>⚙️ 설정</h2>
+                    <button class="modal-close" id="closeModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <!-- 멤버 목록 설정 -->
+                    <div class="setting-group">
+                        <label class="setting-label">
+                            <span>👥 멤버 목록</span>
+                            <small>공백, 쉼표, 줄바꿈 등으로 구분해서 자유롭게 입력하세요</small>
+                        </label>
+                        <textarea 
+                            id="membersTextarea" 
+                            class="setting-textarea"
+                            placeholder="김민수 이지은 박준호 최서연&#10;또는&#10;김민수, 이지은, 박준호, 최서연"></textarea>
+                        <div class="setting-preview">
+                            <strong>인식된 멤버 (<span id="memberCount">0</span>명):</strong>
+                            <div id="membersPreview" class="preview-content">입력된 내용이 없습니다</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 그룹 설정 -->
+                    <div class="setting-group">
+                        <label class="setting-label">
+                            <span>🏷️ 그룹 설정</span>
+                            <small>같은 그룹의 멤버들끼리는 최대한 서로 다른 모둠에 배치됩니다</small>
+                        </label>
+                        <div id="groupsContainer">
+                            <!-- 그룹들이 동적으로 추가됩니다 -->
+                        </div>
+                        <button type="button" id="addGroupBtn" class="btn-add-group">+ 그룹 추가</button>
+                        <div class="setting-preview">
+                            <strong>설정된 그룹 (<span id="groupCount">0</span>개):</strong>
+                            <div id="groupsPreview" class="preview-content">설정된 그룹이 없습니다</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveSettingsBtn" class="btn btn-primary">
+                        💾 저장하고 적용
+                    </button>
+                    <button id="cancelSettingsBtn" class="btn btn-outline">
+                        ❌ 취소
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 로딩 오버레이 -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <h3>자리를 배치하는 중...</h3>
+                <p>최적의 배치를 계산하고 있습니다.</p>
+            </div>
+        </div>
+
+        <!-- 알림 토스트 -->
+        <div id="toast" class="toast">
+            <div class="toast-content">
+                <span class="toast-icon"></span>
+                <span class="toast-message">자리 배치가 완료되었습니다!</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
